@@ -1,0 +1,6 @@
+# RTL simulation with cocotb. /usr/bin goes first so the system iverilog/vvp
+# load libpython; the OSS CAD Suite vvp bundles an older glibc and cannot.
+set -e
+cd test
+make clean >/dev/null
+PATH="$HOME/.venvs/stable/bin:/usr/bin:$PATH" make
