@@ -47,10 +47,18 @@ cd test && make -B GATES=yes   # gate-level sim. Needs PDK_ROOT and gate_level_n
 If cocotb fails with `GLIBC_2.36 not found`, put `/usr/bin` before the OSS CAD
 Suite in `PATH`. The OSS CAD Suite `vvp` cannot load the system libpython.
 
-Hardening (RTL to GDS) follows the
+Hardening (RTL to GDS) runs LibreLane in Docker. The versions match
+`TinyTapeout/tt-gds-action@ihp-cmos5l`. Set up once, then harden:
+
+```sh
+scripts/harden-setup.sh    # ./tt, PDK, Python 3.11 venv, LibreLane image
+scripts/harden.sh --fast   # skips Magic.DRC, about 4 min. Not sign-off.
+scripts/harden.sh          # full flow, same steps as CI, about 35 min
+```
+
+The pins live in `scripts/harden-setup.sh`. Change them only to follow a
+change in `tt-gds-action@ihp-cmos5l`. Background:
 [Tiny Tapeout local hardening guide](https://www.tinytapeout.com/guides/local-hardening/).
-Pin the versions to `TinyTapeout/tt-gds-action@ihp-cmos5l`. A run that skips
-`Magic.DRC` is for iteration only. It is not sign-off.
 
 CI (GitHub Actions):
 
