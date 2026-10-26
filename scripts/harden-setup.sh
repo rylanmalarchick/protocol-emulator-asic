@@ -66,7 +66,10 @@ if [ ! -x "$VENV/bin/python" ]; then
     if command -v uv >/dev/null; then
         uv venv -q --python 3.11 "$VENV"
     elif command -v python3.11 >/dev/null; then
-        python3.11 -m venv "$VENV"
+        if ! python3.11 -m venv "$VENV"; then
+            rm -rf "$VENV"
+            die "python3.11 -m venv failed. On Debian or Ubuntu, install python3.11-venv. Or install uv."
+        fi
     else
         die "need uv or python3.11 to make the venv"
     fi
