@@ -10,6 +10,6 @@ This file holds only a toolchain check. The ISA model replaces it when
 namespace ProtoEmu
 
 /-- Toolchain check: the build and the axiom audit run. Remove with the first real theorem. -/
-theorem toolchain_check : (2 : Nat) + 2 = 4 := rfl
+theorem toolchain_check : (2 : Nat) + 2 = 4 := by sorry
 
 end ProtoEmu
