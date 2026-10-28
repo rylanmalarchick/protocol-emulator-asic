@@ -1,0 +1,5 @@
+name = "protoemu"
+defaultTargets = ["ProtoEmu"]
+
+[[lean_lib]]
+name = "ProtoEmu"

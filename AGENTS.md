@@ -24,6 +24,7 @@ checks every protocol deadline before it emits a program.
 | `src/` | RTL. List each file in `info.yaml` `source_files` and in `test/Makefile` `PROJECT_SOURCES`. |
 | `test/` | cocotb testbench (`tb.v`, `test.py`). |
 | `formal/` | SymbiYosys jobs (`*.sby`). Properties live in the RTL, in `` `ifdef FORMAL `` blocks. |
+| `lean/` | Lean 4 ISA model and latency proofs (Lake package `ProtoEmu`). |
 | `docs/info.md` | Tiny Tapeout datasheet. |
 | `docs/isa.md` | ISA spec. The contract between the chip side and the program side. |
 | `info.yaml` | Tiny Tapeout metadata: top module, tiles, clock, pinout. |
@@ -40,10 +41,11 @@ checks every protocol deadline before it emits a program.
 ## Commands
 
 ```sh
-verify                     # local gate: cocotb RTL sim, then formal. Prints PASS, FAIL, or NO GATE.
+verify                     # local gate: cocotb RTL sim, formal, Lean. Prints PASS, FAIL, or NO GATE.
 cd test && make -B         # the same RTL sim by hand
 cd test && make -B GATES=yes   # gate-level sim. Needs PDK_ROOT and gate_level_netlist.v.
 make -C formal             # every SymbiYosys job. A failure leaves a trace in formal/<job>/engine_*/.
+cd lean && lake build      # Lean model. verify also fails on any sorry.
 ```
 
 If cocotb fails with `GLIBC_2.36 not found`, put `/usr/bin` before the OSS CAD
@@ -68,6 +70,7 @@ CI (GitHub Actions):
 |---|---|---|
 | `test.yaml` | RTL sim | behavior |
 | `formal.yaml` | SymbiYosys jobs | properties |
+| `lean.yaml` | `lake build` plus axiom audit (no `sorry`, no `native_decide`) | ISA proofs |
 | `gds.yaml` | hardening, `gl_test`, precheck, viewer | the chip |
 | `docs.yaml` | datasheet build | docs |
 
