@@ -1,0 +1,14 @@
+# Formal proof of the assertions in the top module (`ifdef FORMAL blocks).
+[options]
+mode prove
+depth 20
+
+[engines]
+smtbmc boolector
+
+[script]
+read -formal project.v
+prep -top tt_um_rylanmalarchick_protoemu
+
+[files]
+../src/project.v
