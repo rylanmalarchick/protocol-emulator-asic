@@ -1,0 +1,25 @@
+name: formal
+on: [push, workflow_dispatch]
+jobs:
+  formal:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v6
+
+      # Same OSS CAD Suite build as the local toolchain (yosys 0.63+161).
+      - name: Set up OSS CAD Suite
+        uses: YosysHQ/setup-oss-cad-suite@v4
+        with:
+          version: '2026-03-21'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run SymbiYosys jobs
+        run: make -C formal
+
+      - name: Upload counterexample traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: formal-traces
+          path: formal/*/engine_*/*.vcd

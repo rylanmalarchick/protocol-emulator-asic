@@ -4,3 +4,6 @@ set -e
 cd test
 make clean >/dev/null
 PATH="$HOME/.venvs/stable/bin:/usr/bin:$PATH" make
+cd ..
+# Formal proofs with SymbiYosys (OSS CAD Suite on PATH).
+make -C formal

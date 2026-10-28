@@ -24,4 +24,14 @@ module tt_um_rylanmalarchick_protoemu (
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, clk, rst_n, 1'b0};
 
+`ifdef FORMAL
+  // Placeholder properties for the template adder. They prove the formal
+  // flow end to end. Replace them when the real RTL lands.
+  always @(*) begin
+    a_sum:      assert (uo_out == ui_in + uio_in);
+    a_uio_out:  assert (uio_out == 8'h00);
+    a_uio_oe:   assert (uio_oe == 8'h00);
+  end
+`endif
+
 endmodule
