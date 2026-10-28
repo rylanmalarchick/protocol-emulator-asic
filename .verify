@@ -7,3 +7,11 @@ PATH="$HOME/.venvs/stable/bin:/usr/bin:$PATH" make
 cd ..
 # Formal proofs with SymbiYosys (OSS CAD Suite on PATH).
 make -C formal
+# Lean ISA model. lake build passes with sorry, so fail on it here.
+# Lean prints: declaration uses `sorry`  (the dots match either quote style).
+lean_log=$(cd lean && lake build 2>&1) || { echo "$lean_log"; exit 1; }
+echo "$lean_log" | tail -1
+if echo "$lean_log" | grep -E 'declaration uses .sorry.'; then
+    echo "lean: sorry found" >&2
+    exit 1
+fi
