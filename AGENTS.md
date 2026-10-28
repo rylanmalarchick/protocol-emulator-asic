@@ -79,6 +79,9 @@ If only the viewer job fails, do not rerun that job by itself. Run
 4. Report CI status exactly. "11 skipped" is not "passing". A local run is not CI.
 5. After a decision or a measured result, append an entry to `notes/log.txt`.
    Use the format in that file. Do not edit old entries.
+6. No schedule. Do not propose timelines, week plans, milestones with dates,
+   or due dates. Do not remind anyone about dates. The only date in this
+   project is the submission deadline above.
 
 ## ISA contract
 
