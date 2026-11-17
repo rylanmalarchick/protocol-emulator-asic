@@ -15,7 +15,8 @@
 # It also clones tt-support-tools into ./tt (ignored by git) and pulls the
 # LibreLane Docker image. Run it again to update ./tt to the branch head.
 #
-# Needs: git, Docker usable without sudo, and uv or python3.11.
+# Needs: git, Docker usable without sudo, uv or python3.11, and the cairo
+# library (libcairo2 on Debian or Ubuntu).
 set -euo pipefail
 
 HOME_DIR="${PROTOEMU_HARDEN_HOME:-$HOME/.local/share/protoemu-harden}"
@@ -81,6 +82,9 @@ else
     "$VENV/bin/python" -m pip install -q --upgrade pip
     "$VENV/bin/python" -m pip install -q -r tt/requirements.txt "librelane==$LIBRELANE_VERSION"
 fi
+# tt_tool.py imports cairosvg, which loads the system cairo library.
+"$VENV/bin/python" -c 'import cairocffi' 2>/dev/null \
+    || die "the cairo library is missing. On Debian or Ubuntu, install libcairo2."
 
 echo "== LibreLane Docker image $LIBRELANE_VERSION"
 docker pull -q "ghcr.io/librelane/librelane:$LIBRELANE_VERSION"
