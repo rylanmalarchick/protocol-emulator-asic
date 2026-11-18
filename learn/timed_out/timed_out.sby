@@ -1,0 +1,13 @@
+[options]
+mode prove
+depth 8
+
+[engines]
+smtbmc boolector
+
+[script]
+read -formal timed_out.v
+prep -top timed_out
+
+[files]
+timed_out.v
