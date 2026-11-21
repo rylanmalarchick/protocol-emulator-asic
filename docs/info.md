@@ -37,7 +37,7 @@ Pin groups:
 | Outputs | `OUT0` to `OUT5` | Driven protocol outputs, for example UART TX, SPI SCK, MOSI, and CS. |
 | Bidirectional | `IO0` to `IO7` | Pins with program-controlled direction, for example I2C SDA and SCL as open-drain lines. |
 
-The design runs from a 50 MHz clock.
+The design runs from a 60 MHz clock.
 
 ## How to test
 
