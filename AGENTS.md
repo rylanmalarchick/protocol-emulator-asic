@@ -8,7 +8,7 @@ stop and ask. Do not work around the rule.
 
 A programmable protocol emulator for the Jane Street protocol emulator ASIC
 competition. The design is a Tiny Tapeout project on IHP 130 nm CMOS5L
-(`sg13cmos5l`), 6x4 tiles, 50 MHz. The submission deadline is 2027-01-18.
+(`sg13cmos5l`), 8x4 tiles, 60 MHz. The submission deadline is 2027-01-18.
 
 Required: UART, SPI, and I2C run as firmware, and the chip is reprogrammable
 after fabrication. Stretch: low-speed USB, 10 Mbit Ethernet.
