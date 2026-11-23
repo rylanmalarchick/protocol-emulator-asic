@@ -333,6 +333,23 @@ async def test_onewire(dut):
     assert sim.core.host_out == rom
 
 
+@cocotb.test()
+async def test_alu_selftest(dut):
+    prog = asm("alu_selftest.s")
+    sim, _ = await compare(dut, prog, lambda s: [])
+    assert sim.core.host_out == [0x0243, 0xFDBC, 0xDBC0, 0x006D, 0x000D, 21, 0x100]
+    # sync in cycle s sets T = s + 1, and dly adds 100. The first set acts in
+    # cycle s + 101, the second 5 cycles later and adds 50 to T. waitt issues in
+    # cycle s + 107 and stalls to floor(T) = s + 156. The next issue is s + 157.
+    ops = [i.op for i in prog]
+    at = {pc: t for t, pc, _ in reversed(sim.core.issues)}
+    s = at[ops.index("sync")]
+    out5 = sim.levels("OUT5")
+    assert out5[s + 100] == 0 and out5[s + 101:s + 106] == [1] * 5 and out5[s + 106] == 0
+    assert at[ops.index("waitt") + 1] == s + 157
+    assert not sim.core.late
+
+
 # ---- an independent bus model ----
 
 @cocotb.test()
