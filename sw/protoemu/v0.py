@@ -20,7 +20,7 @@ whole bus is 1 cycle behind the core's decision). The model hides this in the
 timestamps: `get` at T reads the pin level of cycle T, and `wait` reports the
 bus cycle of the edge. The cost shows up as stall cycles: the core gets a
 sampled value IN_LAT cycles after the sample, and sees an edge IN_LAT cycles
-late. The RTL in learn/v0core matches these costs cycle for cycle.
+late. The RTL in src/v0core.v matches these costs cycle for cycle.
 
 The simulator steps one clock cycle at a time, so peer devices on the bus can
 react to the core: an I2C target can stretch the clock or drive ACK.

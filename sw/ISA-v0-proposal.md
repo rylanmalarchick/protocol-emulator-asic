@@ -34,7 +34,7 @@ An input reaches the core IN_LAT = 3 cycles after it is on the bus: 2
 synchronizer stages, plus 1 cycle because the pins come from a register. The
 model hides this in the timestamps (`get` at T reads the level at cycle T,
 and `wait` reports the bus cycle of the edge) and charges it as stall cycles.
-The RTL in `learn/v0core` showed the third cycle. The first version of the
+The RTL in `src/v0core.v` showed the third cycle. The first version of the
 model charged only 2.
 
 ## Instruction costs
