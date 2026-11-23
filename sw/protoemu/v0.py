@@ -110,6 +110,7 @@ class Core:
         self.waiting: tuple[int, int] | None = None
         self.host_in = deque(host_in)
         self.host_out: list[int] = []
+        self.issues: list[tuple[int, int, int]] = []  # (cycle, pc, T) of each issue
 
     # One timed action: when it acts, and its slack record.
     def _timed(self, t: int, ins: Instr) -> int:
@@ -139,6 +140,7 @@ class Core:
         if not 0 <= self.pc < len(self.prog):
             raise SimError(f"pc {self.pc} is outside the program")
         ins = self.prog[self.pc]
+        self.issues.append((t, self.pc, self.T))
         op, a, b = ins.op, ins.a, ins.b
         r = self.r
         nxt, cost = self.pc + 1, 1
