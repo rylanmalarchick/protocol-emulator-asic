@@ -22,6 +22,7 @@ module tb ();
   wire [7:0] uo_out;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
+  wire out0 = uo_out[2];  // OUT0, for cocotbext-uart
 
   // Replace tt_um_example with your module name:
   tt_um_rylanmalarchick_protoemu user_project (

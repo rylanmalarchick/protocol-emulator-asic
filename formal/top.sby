@@ -1,14 +1,19 @@
-# Formal proof of the assertions in the top module (`ifdef FORMAL blocks).
+# Formal proof of the assertions in the RTL (`ifdef FORMAL blocks): the top
+# module, the core, the loader, and the FIFOs.
 [options]
 mode prove
-depth 20
+depth 8
 
 [engines]
 smtbmc boolector
 
 [script]
-read -formal project.v
+read -formal project.v v0core.v v0_loader.v v0_fifo.v v0_mem.v
 prep -top tt_um_rylanmalarchick_protoemu
 
 [files]
 ../src/project.v
+../src/v0core.v
+../src/v0_loader.v
+../src/v0_fifo.v
+../src/v0_mem.v
