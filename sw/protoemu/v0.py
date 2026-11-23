@@ -14,10 +14,13 @@ The timeline rules extend the Probe A machine (lean/ProtoEmu/Probe/UartTx.lean):
 - New here: `wait pin, level` stalls until the pin reaches the level, then
   sets T to the cycle of that edge. Later actions are relative to the edge.
 
-Inputs pass through a SYNC-stage synchronizer. The model hides the stages in
-the timestamps: `get` at T reads the pin level of cycle T, and `wait` reports
-the bus cycle of the edge. The cost shows up as stall cycles: the core gets a
-sampled value SYNC cycles after the sample, and sees an edge SYNC cycles late.
+Inputs reach the core IN_LAT cycles after they are on the bus: SYNC
+synchronizer stages, plus 1 cycle because the pins come from a register (the
+whole bus is 1 cycle behind the core's decision). The model hides this in the
+timestamps: `get` at T reads the pin level of cycle T, and `wait` reports the
+bus cycle of the edge. The cost shows up as stall cycles: the core gets a
+sampled value IN_LAT cycles after the sample, and sees an edge IN_LAT cycles
+late. The RTL in learn/v0core matches these costs cycle for cycle.
 
 The simulator steps one clock cycle at a time, so peer devices on the bus can
 react to the core: an I2C target can stretch the clock or drive ACK.
@@ -31,6 +34,7 @@ from dataclasses import dataclass
 FRAC = 8  # fraction bits of T
 ONE = 1 << FRAC
 SYNC = 2  # input synchronizer stages
+IN_LAT = SYNC + 1  # cycles from a bus level to the core
 NREG = 8
 MASK16 = 0xFFFF
 EMPTY = 0x100  # `pull` result when the host FIFO is empty
@@ -125,7 +129,7 @@ class Core:
             return
         if self.waiting is not None:
             pin, lvl = self.waiting
-            seen = t - SYNC
+            seen = t - IN_LAT
             if seen >= 0 and bus[seen][pin] == lvl:
                 self.T = seen << FRAC
                 self.waiting = None
@@ -194,7 +198,7 @@ class Core:
         elif op in ("get", "geth"):
             at = self._timed(t, ins)
             self.samples.append((at, a, b, op))
-            cost = at + SYNC + 1 - t
+            cost = at + IN_LAT + 1 - t
         elif op == "pull":
             r[a] = self.host_in.popleft() if self.host_in else EMPTY
         elif op == "push":

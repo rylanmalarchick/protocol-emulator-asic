@@ -84,9 +84,9 @@ def test_both_branch_sides_count():
 def test_wait_resets_L_exactly():
     p = v0asm.assemble("cfg OUT0, PP\nwait IN0, 0\nset OUT0, 0\nhalt")
     res = v0check.analyze(p)
-    # After wait the core is SYNC + 1 cycles past the edge, and T is the edge.
-    assert res.findings[0].worst_slack == -(v0.SYNC + 1)
-    p = v0asm.assemble(f"cfg OUT0, PP\nwait IN0, 0\ndly {v0.SYNC + 2}\nset OUT0, 0\nhalt")
+    # After wait the core is IN_LAT + 1 cycles past the edge, and T is the edge.
+    assert res.findings[0].worst_slack == -(v0.IN_LAT + 1)
+    p = v0asm.assemble(f"cfg OUT0, PP\nwait IN0, 0\ndly {v0.IN_LAT + 2}\nset OUT0, 0\nhalt")
     assert v0check.analyze(p).findings[0].worst_slack == 0
 
 
@@ -111,7 +111,7 @@ def test_uart_tx(bit, ok):
         assert res.worst.worst_slack == min(by_pc.values())
 
 
-@pytest.mark.parametrize("half, ok", [(14, True), (13, False), (25, True)])
+@pytest.mark.parametrize("half, ok", [(15, True), (14, False), (25, True)])
 def test_spi(half, ok):
     p = prog("spi_ctrl.s", HALF=half)
     tgt = peers.SpiTarget(0, "OUT1", "OUT2", "OUT3", "IN1", [0xAA] * 3)
@@ -147,7 +147,7 @@ def test_i2c_nack_path_is_checked_too():
 
 
 def test_cli(capsys):
-    assert v0check.main([str(PROGS / "spi_ctrl.s"), "-D", "HALF=14"]) == 0
+    assert v0check.main([str(PROGS / "spi_ctrl.s"), "-D", "HALF=15"]) == 0
     assert "PASS" in capsys.readouterr().out
-    assert v0check.main([str(PROGS / "spi_ctrl.s"), "-D", "HALF=13"]) == 1
+    assert v0check.main([str(PROGS / "spi_ctrl.s"), "-D", "HALF=14"]) == 1
     assert "LATE" in capsys.readouterr().out

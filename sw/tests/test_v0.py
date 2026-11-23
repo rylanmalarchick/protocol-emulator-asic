@@ -59,17 +59,17 @@ def test_fractional_delay_has_no_drift():
 def test_wait_puts_T_on_the_bus_edge():
     src = peers.UartSource("IN0", [0x00], bit=100, start=57)
     sim = run("wait IN0, 0\nhalt", [src])
-    # The core sees the edge SYNC cycles late, but T is the bus cycle.
+    # The core sees the edge IN_LAT cycles late, but T is the bus cycle.
     assert sim.core.T >> v0.FRAC == 57
-    assert sim.core.halted_at == 57 + v0.SYNC + 1
+    assert sim.core.halted_at == 57 + v0.IN_LAT + 1
 
 
-def test_get_reads_the_level_at_T_and_stalls_sync_cycles():
+def test_get_reads_the_level_at_T_and_stalls_in_lat_cycles():
     src = peers.UartSource("IN0", [0xFE], bit=50, start=0)  # start bit 0..49, bit0=0 50..99
     sim = run("sync\ndly 120\ngeth r0, IN0\nhalt", [src])
     # Cycle 121 is in data bit 1 (100..149), which is 1 for 0xFE.
     assert sim.core.r[0] == 1
-    assert sim.core.halted_at == 121 + v0.SYNC + 1
+    assert sim.core.halted_at == 121 + v0.IN_LAT + 1
 
 
 # ---- assembler ----
@@ -168,7 +168,10 @@ def test_spi_all_modes(mode):
     assert sim.levels("OUT3")[-1] == 1  # CS high
 
 
-def test_spi_minimum_half_period_is_14_cycles():
+def test_spi_minimum_half_period_is_15_cycles():
+    # After the second edge of the last bit: geth (1 + IN_LAT = 4), djnz not
+    # taken (1), push (1), jmp (2), pull, mov, andi, bnz, ldi, ldi (6).
+    # 1 + 4 + 1 + 1 + 2 + 6 = 15 cycles before the next bit's first edge.
     tx = [0x12, 0x34, 0x56]
 
     def go(half):
@@ -176,9 +179,9 @@ def test_spi_minimum_half_period_is_14_cycles():
         sim = run(prog("spi_ctrl.s", HALF=half), [tgt], host_in=tx)
         return sim, tgt
 
-    sim, tgt = go(14)
+    sim, tgt = go(15)
     assert not sim.core.late and min_slack(sim) == 0 and tgt.rx == tx
-    sim, _ = go(13)
+    sim, _ = go(14)
     assert sim.core.late and min_slack(sim) == -1
 
 

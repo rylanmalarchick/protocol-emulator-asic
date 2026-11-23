@@ -30,9 +30,12 @@ timed action.
 | Host FIFO: `pull`, `push` | The host streams bytes in and out while the program runs. `pull` returns 0x100 when the FIFO is empty. | all |
 | Branches `bz`, `bnz`, `jmp` | I2C NACK, UART framing error, end of data. | I2C, UART RX |
 
-The input synchronizer has SYNC = 2 stages. The model hides the stages in the
-timestamps (`get` at T reads the level at cycle T, and `wait` reports the bus
-cycle of the edge) and charges them as stall cycles.
+An input reaches the core IN_LAT = 3 cycles after it is on the bus: 2
+synchronizer stages, plus 1 cycle because the pins come from a register. The
+model hides this in the timestamps (`get` at T reads the level at cycle T,
+and `wait` reports the bus cycle of the edge) and charges it as stall cycles.
+The RTL in `learn/v0core` showed the third cycle. The first version of the
+model charged only 2.
 
 ## Instruction costs
 
@@ -42,8 +45,8 @@ cycle of the edge) and charges them as stall cycles.
 | `djnz bz bnz` | 1, or 2 if taken |
 | `jmp` | 2 |
 | `set put puth` | 1 after the action cycle |
-| `get geth` | 1 + SYNC after the sample cycle |
-| `wait` | until the edge, + SYNC + 1 |
+| `get geth` | 1 + IN_LAT after the sample cycle |
+| `wait` | until the edge, + IN_LAT + 1 |
 | `waitt` | until T, + 1 |
 
 ## Measured results
@@ -54,7 +57,7 @@ All values come from tests that assert exact numbers.
 |---|---|
 | UART TX | 9600 to 3 Mbaud pass. Minimum bit period is 8 cycles (6.25 Mbaud at 50 MHz). The limit is the 8-cycle gap from stop bit to the next start bit. |
 | UART RX | Decodes with the sender 2% fast or 2% slow. Reports a framing error. |
-| SPI controller | Modes 0 to 3 pass against an independent target. Minimum half period is 14 cycles for more than one byte (1.79 MHz SCK). Inside a byte the loop needs only 6 (4.17 MHz). The byte loop overhead (pull, test, push) sets the limit. |
+| SPI controller | Modes 0 to 3 pass against an independent target. Minimum half period is 15 cycles for more than one byte (1.67 MHz SCK). Inside a byte the loop needs only 7 (3.57 MHz). The byte loop overhead (pull, test, push) sets the limit. |
 | I2C controller write | 100 kHz and 400 kHz pass every timing check in the spec checker: tLOW, tHIGH, tSU;DAT, tHD;STA, tSU;STO, and no SDA change while SCL is high. NACK detection works. Clock stretching of 100 to 3000 cycles works. |
 
 ### Protocols the v0 set was not designed for
@@ -107,8 +110,8 @@ python -m protoemu.v0check programs/v0/spi_ctrl.s -D HALF=13
 The tests check two properties against the simulator:
 
 - Sound: the static worst slack is never above a simulated slack.
-- Tight: for whole-cycle programs the two are equal. SPI half period 14
-  passes with slack 0, and 13 is late by 1, in both.
+- Tight: for whole-cycle programs the two are equal. SPI half period 15
+  passes with slack 0, and 14 is late by 1, in both.
 
 All six programs pass the proof. The I2C proof covers the NACK path, which
 a normal run does not take.

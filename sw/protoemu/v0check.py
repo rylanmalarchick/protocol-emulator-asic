@@ -16,7 +16,7 @@ follow both sides. Loops repeat until the intervals stop changing. After
 WIDEN_AFTER updates at one point, a bound that still moves goes to infinity.
 
 `wait` sets T to the cycle of the input edge, and the core resumes
-SYNC + 1 cycles after the edge. So after `wait`, L is exact no matter when the
+IN_LAT + 1 cycles after the edge. So after `wait`, L is exact no matter when the
 edge comes. This is why input timing (clock stretching, a fast or slow
 UART sender) cannot break a proof.
 
@@ -84,12 +84,12 @@ def transfer(ins: v0.Instr, pc: int, s: St) -> list[tuple[int, St]]:
     if op == "sync":
         return [(pc + 1, St(0, 0, True))]
     if op == "wait":
-        return [(pc + 1, St((v0.SYNC + 1) * C, (v0.SYNC + 1) * C, True))]
+        return [(pc + 1, St((v0.IN_LAT + 1) * C, (v0.IN_LAT + 1) * C, True))]
     if op == "waitt":
         return [(pc + 1, _act(s))]
     if op in v0.TIMED:
         a = _act(s)
-        extra = v0.SYNC * C if op in ("get", "geth") else 0
+        extra = v0.IN_LAT * C if op in ("get", "geth") else 0
         return [(pc + 1, St(a.lo + extra - ins.d, a.hi + extra - ins.d,
                             a.int_t and ins.d % C == 0))]
     return [(pc + 1, s.add(C))]  # every other op: 1 cycle
