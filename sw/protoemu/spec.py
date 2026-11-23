@@ -85,3 +85,40 @@ def check_i2c(sda: list[int], scl: list[int], clk_hz: float, mode: str = "sm"):
     data = [(sum(b << (7 - k) for k, b in enumerate(bits[i:i + 8])), bits[i + 8] == 0)
             for i in range(0, len(bits) - 8, 9)]
     return data, bad
+
+
+# WS2812B data sheet: high times 0.4 us and 0.8 us, each +-150 ns. A bit is
+# 1.25 us +-600 ns. Low for more than 280 us latches the colors.
+WS2812 = {"t0h": (0.25e-6, 0.55e-6), "t1h": (0.65e-6, 0.95e-6),
+          "bit": (0.65e-6, 1.85e-6), "reset": 280e-6}
+
+
+def decode_ws2812(levels: list[int], clk_hz: float):
+    """Returns (frames, violations). A frame is the list of 24-bit words sent
+    before one latch. Each word is G << 16 | R << 8 | B."""
+    def cyc(s):
+        return s * clk_hz
+    rises = [t for t in range(1, len(levels)) if levels[t] and not levels[t - 1]]
+    frames, bits, bad = [], [], []
+    for i, r in enumerate(rises):
+        f = next((t for t in range(r, len(levels)) if not levels[t]), len(levels))
+        high = f - r
+        if cyc(WS2812["t0h"][0]) <= high <= cyc(WS2812["t0h"][1]):
+            bits.append(0)
+        elif cyc(WS2812["t1h"][0]) <= high <= cyc(WS2812["t1h"][1]):
+            bits.append(1)
+        else:
+            bad.append(f"high {high} cycles at {r}")
+        nxt = rises[i + 1] if i + 1 < len(rises) else None
+        low_end = nxt if nxt is not None else len(levels)
+        if low_end - f > cyc(WS2812["reset"]) or nxt is None:
+            if nxt is None and low_end - f <= cyc(WS2812["reset"]):
+                bad.append("no latch after the last bit")
+            if len(bits) % 24:
+                bad.append(f"{len(bits)} bits is not a whole number of LEDs")
+            frames.append([sum(b << (23 - k) for k, b in enumerate(bits[j:j + 24]))
+                           for j in range(0, len(bits) - 23, 24)])
+            bits = []
+        elif not cyc(WS2812["bit"][0]) <= nxt - r <= cyc(WS2812["bit"][1]):
+            bad.append(f"bit period {nxt - r} cycles at {r}")
+    return frames, bad

@@ -44,9 +44,10 @@ OUT_PINS = set(range(6))
 IO_PINS = set(range(8, 16))
 IN_PINS = set(range(16, 20))
 
-# Pin modes for `cfg`.
-MODE_IN, MODE_PP, MODE_OD = 0, 1, 2
-MODES = {"IN": MODE_IN, "PP": MODE_PP, "OD": MODE_OD}
+# Pin modes for `cfg`. PP and OD start the pin at 1 (high, or released).
+# PP0 is push-pull that starts low, for lines that idle low (WS2812).
+MODE_IN, MODE_PP, MODE_OD, MODE_PP0 = 0, 1, 2, 3
+MODES = {"IN": MODE_IN, "PP": MODE_PP, "OD": MODE_OD, "PP0": MODE_PP0}
 
 # name: operand kinds. r = register, i = integer, p = pin, l = label,
 # d = delay in cycles (stored with FRAC fraction bits).
@@ -175,8 +176,8 @@ class Core:
                 raise SimError(f"line {ins.line}: pin {a} is input only")
             if a in OUT_PINS and b == MODE_IN:
                 raise SimError(f"line {ins.line}: pin {a} is output only")
-            self.mode[a] = b
-            self.out[a] = 1
+            self.mode[a] = MODE_PP if b == MODE_PP0 else b
+            self.out[a] = 0 if b == MODE_PP0 else 1
         elif op in ("set", "put", "puth"):
             self._drive(a, ins)
             if op == "set":

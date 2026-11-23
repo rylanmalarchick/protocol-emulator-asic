@@ -132,3 +132,62 @@ class I2cTarget(v0.Peer):
         if self.scl_out == 0 and t + 1 >= self.hold_until:
             self.scl_out = 1
         self.prev = (sda, scl)
+
+
+class OneWireDevice(v0.Peer):
+    """1-Wire device, standard speed, from the DS18B20 data sheet. Answers a
+    reset with a presence pulse. Takes an 8-bit command LSB first. On READ ROM
+    (0x33) it sends its 8 ROM bytes, LSB first. It also records timing
+    violations of the bus controller."""
+
+    def __init__(self, pin: str, rom: list[int], clk_hz: float = 50e6):
+        self.pin = v0.PINS[pin]
+        self.us = clk_hz / 1e6
+        self.rom_bits = [(b >> k) & 1 for b in rom for k in range(8)]
+        self.state = "idle"
+        self.prev = 1
+        self.fall = -1
+        self.presence_end = -1
+        self.cmd = self.nbits = 0
+        self.sample_at = -1
+        self.pull: list[tuple[int, int]] = []  # [from, until) cycles the device pulls low
+        self.out = 1
+        self.commands: list[int] = []
+        self.violations: list[str] = []
+
+    def drives(self):
+        return {self.pin: self.out}
+
+    def _low_for(self, start: float, length: float):
+        self.pull.append((round(start), round(start + length)))
+
+    def observe(self, t, levels):
+        lv = levels[self.pin]
+        us = self.us
+        if self.prev == 1 and lv == 0:  # falling edge: a slot or a reset starts
+            self.fall = t
+            if self.state == "cmd":
+                self.sample_at = round(t + 30 * us)  # samples 15 to 60 us in
+            elif self.state == "send":
+                if self.nbits < len(self.rom_bits) and self.rom_bits[self.nbits] == 0:
+                    self._low_for(t + 1, 30 * us)
+                self.nbits += 1
+        elif self.prev == 0 and lv == 1 and self.fall >= 0:  # rising edge
+            low = (t - self.fall) / us
+            if low >= 480:  # reset: presence pulse 30 us later, 120 us long
+                self.state, self.cmd, self.nbits = "presence", 0, 0
+                self._low_for(t + 30 * us, 120 * us)
+                self.presence_end = round(t + 150 * us)
+            elif self.state == "cmd" and not (1 <= low <= 15 or 60 <= low <= 120):
+                self.violations.append(f"write slot low {low:.1f} us at cycle {self.fall}")
+        if self.state == "presence" and t >= self.presence_end:
+            self.state = "cmd"  # its own presence pulse is not a slot
+        if t == self.sample_at and self.state == "cmd":
+            self.cmd |= lv << self.nbits
+            self.nbits += 1
+            if self.nbits == 8:
+                self.commands.append(self.cmd)
+                self.state = "send" if self.cmd == 0x33 else "idle"
+                self.nbits = 0
+        self.out = 0 if any(a <= t + 1 < b for a, b in self.pull) else 1
+        self.prev = lv
